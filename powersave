@@ -1,0 +1,52 @@
+#!/bin/bash
+numcores=$(ls -d /sys/devices/system/cpu/cpu[0-999] | wc -l)
+numcores=$(($numcores-1))
+sleepamt=5
+
+Help()
+{
+	#Display help
+	echo "A simple bash application to continuously set the cpu's governor to powersave mode."
+	echo "Note: this script must be run as root."
+	echo
+	echo "Syntax: powersave [-h|w]"
+	echo "Options:"
+	echo "w     Adjust wait time between governor sets"
+	echo "h     Print help"
+	echo
+}
+
+if [ $(whoami) != "root" ]
+then
+	echo
+	echo "||==============================||"
+	echo "||Powersave must be run as root!||"
+	echo "||==============================||"
+	echo
+	Help
+	exit 126
+else
+	while getopts ":hw:" option; do
+		case $option in
+			h) #Display help
+			   Help
+			   exit;;
+			w) #Custom wait time
+			   sleepamt=$((OPTARG));;			   
+			\?) #Invalid option
+			    Help
+			    exit;;
+		esac
+	done
+
+	while(true)
+		do
+			#Set the cpu governors to powersave mode
+			for i in $(seq 0 $numcores)
+			do
+				echo powersave > /sys/devices/system/cpu/cpu$i/cpufreq/scaling_governor
+			done
+			
+			sleep $sleepamt
+	done
+fi
